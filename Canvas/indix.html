@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas POC</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      .canvas-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #drawing-area {
+        border: 1px solid rgb(0, 0, 0);
+        margin: 1rem 0;
+      }
+
+      .canvas-container__tools {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .tool {
+        cursor: pointer;
+        border: 1px solid black;
+        padding: 0.5rem 1rem;
+        font-size: 1.2rem;
+        margin: 0.5rem;
+        transition: background 0.3s;
+      }
+
+      .tool:hover {
+        background: #f0f0f0;
+      }
+
+      .tool input {
+        margin-left: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas-container">
+      <canvas id="drawing-area" height="600" width="800"></canvas>
+      <div class="canvas-container__tools">
+        <div class="tool" onclick="selectPen()">Pencil</div>
+        <div class="tool" onclick="selectEraser()">Eraser</div>
+        <div class="tool" onclick="clearCanvas()">Clear</div>
+        <div class="tool" onclick="selectRectangle()">Rectangle</div>
+        <div class="tool" onclick="selectSquare()">Square</div>
+        <div class="tool" onclick="selectCircle()">Circle</div>
+        <div class="tool" onclick="selectLine()">Line</div>
+        <div class="tool" onclick="selectBrush()">Brush</div>
+        <div class="tool" onclick="selectCurve()">Curve</div>
+        
+        <div class="tool color-picker">
+          Color:
+          <input type="color" id="color-picker" onchange="setBrushColor(this.value)" />
+        </div>
+        
+        <div class="tool brush-size">
+          Size:
+          <input type="number" id="brush-size" min="1" max="50" value="5" onchange="setBrushSize(this.value)" />
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.querySelector("#drawing-area");
+      const ctx = canvas.getContext("2d");
+
+      let drawing = false;
+      let eraser = false;
+      let shape = null;
+      let brushColor = document.querySelector("#color-picker").value;
+      let brushSize = 5;
+      let startX, startY;
+
+      canvas.addEventListener("mousedown", (e) => {
+        startX = e.offsetX;
+        startY = e.offsetY;
+        drawing = true;
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (!drawing) return;
+
+        const currentX = e.offsetX;
+        const currentY = e.offsetY;
+
+        if (eraser) {
+          eraseOnCanvas(currentX, currentY);
+        } else if (shape === "brush") {
+          drawBrush(currentX, currentY);
+        } else if (shape === null) {
+          drawOnCanvas(startX, startY, currentX, currentY);
+          startX = currentX;
+          startY = currentY;
+        }
+      });
+
+      canvas.addEventListener("mouseup", (e) => {
+        if (drawing) {
+          const currentX = e.offsetX;
+          const currentY = e.offsetY;
+
+          if (shape === "rectangle") {
+            drawRectangle(startX, startY, currentX, currentY);
+          } else if (shape === "square") {
+            drawSquare(startX, startY, currentX, currentY);
+          } else if (shape === "circle") {
+            drawCircle(startX, startY, currentX, currentY);
+          } else if (shape === "line") {
+            drawLine(startX, startY, currentX, currentY);
+          } else if (shape === "curve") {
+            drawCurve(startX, startY, currentX, currentY);
+          }
+          drawing = false;
+        }
+      });
+
+      const setBrushColor = (color) => {
+        brushColor = color;
+      };
+    </script>
+  </body>
+</html>
