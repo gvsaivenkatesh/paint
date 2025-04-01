@@ -84,7 +84,7 @@
       let drawing = false;
       let eraser = false;
       let shape = null;
-      let brushColor = document.querySelector("#color-picker").value;
+      let brushColor = "rgb(0, 0, 255)";
       let brushSize = 5;
       let startX, startY;
 
@@ -131,9 +131,104 @@
         }
       });
 
+      // ✅ Brush Drawing
+      function drawBrush(x, y) {
+        ctx.fillStyle = brushColor;
+        ctx.beginPath();
+        ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ✅ Eraser
+      function eraseOnCanvas(x, y) {
+        ctx.clearRect(x - brushSize / 2, y - brushSize / 2, brushSize, brushSize);
+      }
+
+      // ✅ Freehand Drawing
+      function drawOnCanvas(startX, startY, currentX, currentY) {
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+      }
+
+      // ✅ Rectangle
+      function drawRectangle(x1, y1, x2, y2) {
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      }
+
+      // ✅ Square
+      function drawSquare(x1, y1, x2, y2) {
+        const side = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.strokeRect(x1, y1, side, side);
+      }
+
+      // ✅ Circle
+      function drawCircle(x1, y1, x2, y2) {
+        const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.beginPath();
+        ctx.arc(x1, y1, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // ✅ Line
+      function drawLine(x1, y1, x2, y2) {
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      // ✅ Curve
+      function drawCurve(x1, y1, x2, y2) {
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo((x1 + x2) / 2, y1 - 50, x2, y2);
+        ctx.stroke();
+      }
+
+      // ✅ Controls
+      const selectPen = () => {
+        shape = null;
+        eraser = false;
+      };
+
+      const selectEraser = () => {
+        shape = null;
+        eraser = true;
+      };
+
+      const clearCanvas = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      };
+
       const setBrushColor = (color) => {
         brushColor = color;
       };
+
+      const setBrushSize = (size) => {
+        brushSize = size;
+      };
+
+      const selectRectangle = () => shape = "rectangle";
+      const selectSquare = () => shape = "square";
+      const selectCircle = () => shape = "circle";
+      const selectLine = () => shape = "line";
+      const selectBrush = () => shape = "brush";
+      const selectCurve = () => shape = "curve";
     </script>
   </body>
-</html>
+</html>    
