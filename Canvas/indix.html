@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -5,6 +6,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Canvas POC</title>
+    <script
+      src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+      integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H"
+      crossorigin="anonymous">
+    </script>
     <style>
       body {
         margin: 0;
@@ -22,7 +28,7 @@
       }
 
       #drawing-area {
-        border: 1px solid rgb(0, 0, 0);
+        border: 1px solid black;
         margin: 1rem 0;
       }
 
@@ -37,13 +43,8 @@
         cursor: pointer;
         border: 1px solid black;
         padding: 0.5rem 1rem;
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         margin: 0.5rem;
-        transition: background 0.3s;
-      }
-
-      .tool:hover {
-        background: #f0f0f0;
       }
 
       .tool input {
@@ -51,31 +52,29 @@
       }
     </style>
   </head>
+  
+  
   <body>
     <div class="canvas-container">
-      <canvas id="drawing-area" height="600" width="800"></canvas>
+      <canvas id="drawing-area" height="600" width="1000"></canvas>
       <div class="canvas-container__tools">
-        <div class="tool" onclick="selectPen()">Pencil</div>
-        <div class="tool" onclick="selectEraser()">Eraser</div>
-        <div class="tool" onclick="clearCanvas()">Clear</div>
-        <div class="tool" onclick="selectRectangle()">Rectangle</div>
-        <div class="tool" onclick="selectSquare()">Square</div>
-        <div class="tool" onclick="selectCircle()">Circle</div>
-        <div class="tool" onclick="selectLine()">Line</div>
-        <div class="tool" onclick="selectBrush()">Brush</div>
-        <div class="tool" onclick="selectCurve()">Curve</div>
-        
+        <div class="tool pencil" onclick="selectPen()">Pencil</div>
+        <div class="tool toggle" onclick="Eraser()">Eraser</div>
+        <div class="tool clear" onclick="clearCanvas()">Clear</div>
+        <div class="tool rectangle" onclick="selectRectangle()">Rectangle</div>
+        <div class="tool square" onclick="selectSquare()">Square</div>
+        <div class="tool circle" onclick="selectCircle()">Circle</div>
         <div class="tool color-picker">
           Color:
           <input type="color" id="color-picker" onchange="setBrushColor(this.value)" />
         </div>
-        
         <div class="tool brush-size">
           Size:
           <input type="number" id="brush-size" min="1" max="50" value="5" onchange="setBrushSize(this.value)" />
         </div>
       </div>
     </div>
+
 
     <script>
       const canvas = document.querySelector("#drawing-area");
@@ -88,6 +87,47 @@
       let brushSize = 5;
       let startX, startY;
 
+
+
+
+      function eraseOnCanvas(currentX, currentY) {
+        ctx.clearRect(currentX - brushSize / 2, currentY - brushSize / 2, brushSize, brushSize);
+      }
+
+      function drawOnCanvas(startX, startY, currentX, currentY) {
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+      }
+
+      function drawRectangle(startX, startY, currentX, currentY) {
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+      }
+
+      function drawSquare(startX, startY, currentX, currentY) {
+        const side = Math.min(Math.abs(currentX - startX), Math.abs(currentY - startY));
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.strokeRect(startX, startY, side, side);
+      }
+
+      function drawCircle(startX, startY, currentX, currentY) {
+        const radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+        ctx.strokeStyle = brushColor;
+        ctx.lineWidth = brushSize;
+        ctx.beginPath();
+        ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+      }
+
+
+
+
       canvas.addEventListener("mousedown", (e) => {
         startX = e.offsetX;
         startY = e.offsetY;
@@ -95,19 +135,17 @@
       });
 
       canvas.addEventListener("mousemove", (e) => {
-        if (!drawing) return;
+        if (drawing && shape === null) {
+          const currentX = e.offsetX;
+          const currentY = e.offsetY;
 
-        const currentX = e.offsetX;
-        const currentY = e.offsetY;
-
-        if (eraser) {
-          eraseOnCanvas(currentX, currentY);
-        } else if (shape === "brush") {
-          drawBrush(currentX, currentY);
-        } else if (shape === null) {
-          drawOnCanvas(startX, startY, currentX, currentY);
-          startX = currentX;
-          startY = currentY;
+          if (eraser) {
+            eraseOnCanvas(currentX, currentY);
+          } else {
+            drawOnCanvas(startX, startY, currentX, currentY);
+            startX = currentX;
+            startY = currentY;
+          }
         }
       });
 
@@ -122,97 +160,21 @@
             drawSquare(startX, startY, currentX, currentY);
           } else if (shape === "circle") {
             drawCircle(startX, startY, currentX, currentY);
-          } else if (shape === "line") {
-            drawLine(startX, startY, currentX, currentY);
-          } else if (shape === "curve") {
-            drawCurve(startX, startY, currentX, currentY);
           }
           drawing = false;
         }
       });
 
-      // ✅ Brush Drawing
-      function drawBrush(x, y) {
-        ctx.fillStyle = brushColor;
-        ctx.beginPath();
-        ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
 
-      // ✅ Eraser
-      function eraseOnCanvas(x, y) {
-        ctx.clearRect(x - brushSize / 2, y - brushSize / 2, brushSize, brushSize);
-      }
 
-      // ✅ Freehand Drawing
-      function drawOnCanvas(startX, startY, currentX, currentY) {
-        ctx.strokeStyle = brushColor;
-        ctx.lineWidth = brushSize;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(currentX, currentY);
-        ctx.stroke();
-      }
-
-      // ✅ Rectangle
-      function drawRectangle(x1, y1, x2, y2) {
-        ctx.strokeStyle = brushColor;
-        ctx.lineWidth = brushSize;
-        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      }
-
-      // ✅ Square
-      function drawSquare(x1, y1, x2, y2) {
-        const side = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
-        ctx.strokeStyle = brushColor;
-        ctx.lineWidth = brushSize;
-        ctx.strokeRect(x1, y1, side, side);
-      }
-
-      // ✅ Circle
-      function drawCircle(x1, y1, x2, y2) {
-        const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-        ctx.strokeStyle = brushColor;
-        ctx.lineWidth = brushSize;
-        ctx.beginPath();
-        ctx.arc(x1, y1, radius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // ✅ Line
-      function drawLine(x1, y1, x2, y2) {
-        ctx.strokeStyle = brushColor;
-        ctx.lineWidth = brushSize;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
-
-      // ✅ Curve
-      function drawCurve(x1, y1, x2, y2) {
-        ctx.strokeStyle = brushColor;
-        ctx.lineWidth = brushSize;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.quadraticCurveTo((x1 + x2) / 2, y1 - 50, x2, y2);
-        ctx.stroke();
-      }
-
-      // ✅ Controls
-      const selectPen = () => {
-        shape = null;
-        eraser = false;
-      };
-
-      const selectEraser = () => {
-        shape = null;
+      const Eraser = () => {
         eraser = true;
+        shape = null;
       };
 
-      const clearCanvas = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const selectPen = () => {
+        eraser = false;
+        shape = null;
       };
 
       const setBrushColor = (color) => {
@@ -223,12 +185,28 @@
         brushSize = size;
       };
 
-      const selectRectangle = () => shape = "rectangle";
-      const selectSquare = () => shape = "square";
-      const selectCircle = () => shape = "circle";
-      const selectLine = () => shape = "line";
-      const selectBrush = () => shape = "brush";
-      const selectCurve = () => shape = "curve";
+      const clearCanvas = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        eraser = false;
+        shape = null;
+      };
+
+      const selectRectangle = () => {
+        shape = "rectangle";
+        eraser = false;
+      };
+
+      const selectSquare = () => {
+        shape = "square";
+        eraser = false;
+      };
+
+      const selectCircle = () => {
+        shape = "circle";
+        eraser = false;
+      };
     </script>
+
+
   </body>
-</html>    
+</html>
